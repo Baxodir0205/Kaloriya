@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaloriya Hisoblagich</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        :root { --primary: #4CAF50; --primary-dark: #45a049; --light: #f8f9fa; --dark: #2c3e50; --gray: #7f8c8d; --white: #ffffff; }
+        
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: var(--dark); min-height: 100vh; padding: 0; }
+        
+        .container { max-width: 400px; margin: 0 auto; background: var(--light); min-height: 100vh; position: relative; }
+        
+        .header { background: var(--white); padding: 20px; text-align: center; border-bottom: 1px solid #eee; }
+        .header h1 { color: var(--primary); font-size: 24px; }
+        
+        .stats-container { padding: 25px 20px; background: var(--white); margin: 15px; border-radius: 20px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); }
+        .remaining-calories { text-align: center; margin-bottom: 30px; }
+        .calories-value { font-size: 48px; font-weight: 700; color: var(--primary); margin: 15px 0; }
+        .calories-label { font-size: 18px; color: var(--gray); font-weight: 500; }
+        
+        .progress-section { margin: 15px; }
+        .progress-bar { background: #e0e0e0; height: 20px; border-radius: 10px; margin: 10px 0; overflow: hidden; }
+        .progress-fill { background: linear-gradient(to right, #4CAF50, #45a049); height: 100%; border-radius: 10px; transition: width 0.5s; }
+        .progress-text { display: flex; justify-content: space-between; font-size: 14px; color: var(--gray); }
+        
+        /* Maqsad Progress Section */
+        .goal-progress { background: var(--white); margin: 15px; border-radius: 20px; padding: 25px 20px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); }
+        .goal-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
+        .goal-stat { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 12px; }
+        .goal-value { font-size: 24px; font-weight: bold; color: var(--primary); margin-bottom: 5px; }
+        .goal-label { font-size: 12px; color: var(--gray); }
+        .goal-progress-bar { background: #e0e0e0; height: 8px; border-radius: 4px; margin: 15px 0; overflow: hidden; }
+        .goal-progress-fill { background: linear-gradient(to right, #2196F3, #21CBF3); height: 100%; border-radius: 4px; transition: width 0.5s; }
+        
+        .recent-food { background: var(--white); margin: 15px; border-radius: 20px; padding: 25px 20px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); }
+        .section-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: var(--dark); display: flex; align-items: center; }
+        .section-title i { margin-right: 10px; color: var(--primary); }
+        
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--gray); }
+        .empty-state i { font-size: 60px; margin-bottom: 20px; color: #e0e0e0; }
+        
+        .cta-section { padding: 20px; text-align: center; }
+        .cta-button { background: linear-gradient(to right, var(--primary), var(--primary-dark)); color: var(--white); border: none; padding: 18px 30px; border-radius: 15px; font-size: 18px; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.3s; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); }
+        .cta-button i { margin-right: 12px; font-size: 20px; }
+        
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); display: flex; justify-content: space-around; padding: 15px 0; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); max-width: 400px; margin: 0 auto; border-top-left-radius: 20px; border-top-right-radius: 20px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--gray); font-size: 12px; transition: all 0.3s; }
+        .nav-item.active { color: var(--primary); transform: translateY(-5px); }
+        .nav-icon { font-size: 22px; margin-bottom: 5px; }
+        
+        .food-log { max-height: 200px; overflow-y: auto; margin-top: 15px; }
+        .food-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f0f0f0; align-items: center; }
+        .food-name { font-weight: 500; display: flex; align-items: center; font-size: 16px; }
+        .food-name i { margin-right: 12px; color: var(--primary); }
+        .food-calories { color: var(--primary); font-weight: 600; font-size: 16px; }
+        
+        .hidden { display: none; }
+        .page { padding-bottom: 80px; }
+        
+        .profile-section, .add-food-section { padding: 25px 20px; background: var(--white); margin: 15px; border-radius: 20px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); }
+        
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 10px; font-weight: 500; color: var(--dark); font-size: 16px; }
+        input, select { width: 100%; padding: 16px; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; transition: all 0.3s; background: var(--light); }
+        
+        button { background: linear-gradient(to right, var(--primary), var(--primary-dark)); color: var(--white); border: none; padding: 18px 20px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.3s; display: flex; justify-content: center; align-items: center; }
+        button.secondary { background: #666; }
+        button i { margin-right: 10px; }
+        
+        /* Food Grid */
+        .food-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 400px; overflow-y: auto; margin-top: 15px; }
+        .food-card { background: white; border-radius: 12px; padding: 12px; text-align: center; cursor: pointer; border: 2px solid transparent; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .food-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .food-emoji { font-size: 24px; margin-bottom: 5px; }
+        .food-name-small { font-weight: 600; font-size: 12px; margin-bottom: 3px; line-height: 1.2; }
+        .food-calories-small { color: var(--primary); font-size: 11px; font-weight: 600; }
+        
+        .calculation-result { padding: 15px; background: #e8f5e8; border-radius: 12px; margin: 20px 0; }
+        
+        .category-tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 10px; }
+        .category-tab { white-space: nowrap; padding: 8px 12px; border: 1px solid #ddd; background: white; border-radius: 15px; font-size: 12px; cursor: pointer; transition: all 0.3s; }
+        .category-tab.active { background: #4CAF50; color: white; border-color: #4CAF50; }
+        
+        .quick-foods { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+        
+        .prediction-card { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 15px; margin: 15px 0; }
+        .prediction-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; text-align: center; }
+        .prediction-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .prediction-stat { text-align: center; }
+        .prediction-value { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+        .prediction-label { font-size: 12px; opacity: 0.9; }
+        
+        /* Quantity Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 90%; max-width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .modal-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; text-align: center; }
+        .quantity-input { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .quantity-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .quantity-value { font-size: 24px; font-weight: bold; min-width: 60px; text-align: center; }
+        .unit-select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 20px; }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍎 Kaloriya Hisoblagich</h1>
+        </div>
+        
+        <div class="page" id="mainPage">
+            <!-- Maqsad Progress -->
+            <div class="goal-progress">
+                <div class="section-title"><i class="fas fa-bullseye"></i> Maqsad Progressi</div>
+                <div class="goal-progress-bar">
+                    <div class="goal-progress-fill" id="goalProgress" style="width: 0%"></div>
+                </div>
+                <div class="goal-stats">
+                    <div class="goal-stat">
+                        <div class="goal-value" id="currentWeightDisplay">72</div>
+                        <div class="goal-label">Joriy vazn</div>
+                    </div>
+                    <div class="goal-stat">
+                        <div class="goal-value" id="targetWeightDisplay">65</div>
+                        <div class="goal-label">Maqsad vazn</div>
+                    </div>
+                    <div class="goal-stat">
+                        <div class="goal-value" id="weightLost">0</div>
+                        <div class="goal-label">Yo'qotilgan</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Natija Bashorati -->
+            <div class="prediction-card">
+                <div class="prediction-title">📊 Natija Bashorati</div>
+                <div class="prediction-stats">
+                    <div class="prediction-stat">
+                        <div class="prediction-value" id="predictionWeeks">0</div>
+                        <div class="prediction-label">Hafta</div>
+                    </div>
+                    <div class="prediction-stat">
+                        <div class="prediction-value" id="predictionDate">-</div>
+                        <div class="prediction-label">Taxminiy sana</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Kunlik Progress -->
+            <div class="progress-section">
+                <div class="section-title"><i class="fas fa-chart-line"></i> Bugungi Progress</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="dailyProgress" style="width: 0%"></div>
+                </div>
+                <div class="progress-text">
+                    <span>Iste'mol qilindi: <strong id="consumedCalories">0</strong> kcal</span>
+                    <span>Qolgan: <strong id="remainingCaloriesText">1850</strong> kcal</span>
+                </div>
+            </div>
+            
+            <div class="stats-container">
+                <div class="remaining-calories">
+                    <div class="calories-value" id="remainingCalories">1 850</div>
+                    <div class="calories-label">Qolgan kaloriyalar</div>
+                </div>
+            </div>
+            
+            <div class="recent-food">
+                <div class="section-title"><i class="fas fa-history"></i> Bugun iste'mol qilingan</div>
+                <div class="food-log" id="foodLog">
+                    <div class="empty-state">
+                        <i class="fas fa-utensils"></i>
+                        <p>Hali ovqat qo'shmagansiz</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="cta-section">
+                <button class="cta-button" id="addFoodBtn"><i class="fas fa-utensils"></i> Ovqat qo'shish</button>
+            </div>
+        </div>
+        
+        <div class="page hidden" id="addFoodPage">
+            <div class="add-food-section">
+                <div class="section-title"><i class="fas fa-utensils"></i> Ovqat qo'shish</div>
+                
+                <!-- Qidiruv -->
+                <div style="margin-bottom: 20px;">
+                    <input type="text" id="foodSearch" placeholder="🔍 Ovqat nomini izlash..." 
+                           style="width: 100%; padding: 15px; border: 2px solid #4CAF50; border-radius: 12px; font-size: 16px; background: white;">
+                </div>
+                
+                <!-- Tez ovqatlar -->
+                <div style="margin-bottom: 20px;">
+                    <div class="section-title" style="font-size: 16px; margin-bottom: 10px;">
+                        <i class="fas fa-bolt"></i> Tez Tanlash
+                    </div>
+                    <div class="quick-foods">
+                        <div class="food-card" onclick="showQuantityModal('Olma', 52, '🍎')">
+                            <div class="food-emoji">🍎</div>
+                            <div class="food-name-small">Olma</div>
+                            <div class="food-calories-small">52 kcal/100g</div>
+                        </div>
+                        <div class="food-card" onclick="showQuantityModal('Banan', 89, '🍌')">
+                            <div class="food-emoji">🍌</div>
+                            <div class="food-name-small">Banan</div>
+                            <div class="food-calories-small">89 kcal/100g</div>
+                        </div>
+                        <div class="food-card" onclick="showQuantityModal('Non', 265, '🍞')">
+                            <div class="food-emoji">🍞</div>
+                            <div class="food-name-small">Non</div>
+                            <div class="food-calories-small">265 kcal/100g</div>
+                        </div>
+                        <div class="food-card" onclick="showQuantityModal('Tuxum', 155, '🥚')">
+                            <div class="food-emoji">🥚</div>
+                            <div class="food-name-small">Tuxum</div>
+                            <div class="food-calories-small">155 kcal/dona</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Kategoriyalar -->
+                <div class="category-tabs" id="categoryTabs">
+                    <!-- Kategoriyalar JavaScript orqali qo'shiladi -->
+                </div>
+                
+                <!-- Ovqatlar Grid -->
+                <div class="food-grid" id="foodGrid">
+                    <!-- Ovqatlar JavaScript orqali qo'shiladi -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="page hidden" id="profilePage">
+            <div class="profile-section">
+                <div class="section-title"><i class="fas fa-user-cog"></i> Shaxsiy ma'lumotlar</div>
+                
+                <div class="input-group">
+                    <label>Ism</label>
+                    <input type="text" id="userName" placeholder="Ismingizni kiriting">
+                </div>
+                
+                <div class="input-group">
+                    <label>Yosh</label>
+                    <input type="number" id="userAge" placeholder="25" min="15" max="100">
+                </div>
+                
+                <div class="input-group">
+                    <label>Bo'y (sm)</label>
+                    <input type="number" id="userHeight" placeholder="175" min="100" max="250">
+                </div>
+                
+                <div class="input-group">
+                    <label>Joriy vazn (kg)</label>
+                    <input type="number" id="currentWeight" placeholder="72" min="30" max="200">
+                </div>
+                
+                <div class="input-group">
+                    <label>Maqsad vazn (kg)</label>
+                    <input type="number" id="targetWeight" placeholder="65" min="30" max="200">
+                </div>
+                
+                <div class="input-group">
+                    <label>Jins</label>
+                    <select id="userGender">
+                        <option value="male">Erkak</option>
+                        <option value="female">Ayol</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label>Faollik darajasi</label>
+                    <select id="activityLevel">
+                        <option value="1.2">Kam faol (ofis ishi)</option>
+                        <option value="1.375">O'rtacha faol (yengil mashq)</option>
+                        <option value="1.55">Faol (haftada 3-5 marta mashq)</option>
+                        <option value="1.725">Juda faol (kundalik mashq)</option>
+                        <option value="1.9">Sportchi (kundalik intensiv mashq)</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label>Maqsad</label>
+                    <select id="goalType">
+                        <option value="loss">Vazn yo'qotish</option>
+                        <option value="maintain">Vazn saqlash</option>
+                        <option value="gain">Vazn oshirish</option>
+                    </select>
+                </div>
+
+                <!-- Hisoblash natijasi -->
+                <div id="calculationResult" class="calculation-result" style="display: none;">
+                    <div class="section-title" style="font-size: 16px; margin-bottom: 10px;">
+                        <i class="fas fa-calculator"></i> Hisoblash natijasi
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #4CAF50;" id="resultCalories">0</div>
+                            <div style="font-size: 12px; color: #666;">Kunlik kaloriya</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #2196F3;" id="resultWeeks">0</div>
+                            <div style="font-size: 12px; color: #666;">Taxminiy hafta</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 14px; color: #666; text-align: center;">
+                        <span id="resultMessage"></span>
+                    </div>
+                </div>
+                
+                <button id="calculateCaloriesBtn"><i class="fas fa-calculator"></i> Kaloriyamni hisobla</button>
+                <button id="saveProfileBtn" class="secondary"><i class="fas fa-save"></i> Profilni saqlash</button>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <div class="nav-item active" data-page="mainPage"><i class="fas fa-home nav-icon"></i><span>Bosh sahifa</span></div>
+            <div class="nav-item" data-page="addFoodPage"><i class="fas fa-utensils nav-icon"></i><span>Ovqatlar</span></div>
+            <div class="nav-item" data-page="profilePage"><i class="fas fa-user nav-icon"></i><span>Profil</span></div>
+        </div>
+    </div>
+
+    <!-- Quantity Modal -->
+    <div class="modal-overlay hidden" id="quantityModal">
+        <div class="modal-content">
+            <div class="modal-title" id="modalFoodName">Ovqat nomi</div>
+            
+            <div class="quantity-input">
+                <button class="quantity-btn" onclick="changeQuantity(-1)">-</button>
+                <div class="quantity-value" id="quantityValue">100</div>
+                <button class="quantity-btn" onclick="changeQuantity(1)">+</button>
+            </div>
+            
+            <select class="unit-select" id="unitSelect">
+                <option value="g">Gramm (g)</option>
+                <option value="kg">Kilogramm (kg)</option>
+                <option value="ml">Millilitr (ml)</option>
+                <option value="l">Litr (l)</option>
+                <option value="piece">Dona</option>
+                <option value="cup">Stakan</option>
+                <option value="spoon">Qoshiq</option>
+                <option value="teaspoon">Choy qoshiq</option>
+            </select>
+            
+            <div style="text-align: center; margin: 15px 0; font-size: 18px; font-weight: bold; color: var(--primary);">
+                Jami: <span id="totalCalories">0</span> kcal
+            </div>
+            
+            <button onclick="addFoodWithQuantity()" style="background: var(--primary); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-size: 16px; font-weight: 600; cursor: pointer;">
+                <i class="fas fa-plus"></i> Qo'shish
+            </button>
+            <button onclick="hideQuantityModal()" style="background: #666; color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px;">
+                Bekor qilish
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // App Data
+        let dailyCalories = 1850;
+        let consumedCalories = 0;
+        let foodHistory = [];
+        let currentCategory = 'all';
+        let currentWeight = 72;
+        let targetWeight = 65;
+        let startWeight = 72;
+        let totalCaloriesDeficit = 0;
+
+        // Quantity modal uchun o'zgaruvchilar
+        let currentFood = null;
+        let currentFoodCalories = 0;
+        let currentQuantity = 100;
+        let currentUnit = 'g';
+
+        // Ovqatlar bazasi (100g yoki 1 dona uchun kaloriya)
+        const foodDatabase = [
+            // Mevalar (100g uchun)
+            { name: "Olma", calories: 52, emoji: "🍎", category: "mevalar", defaultUnit: "g" },
+            { name: "Banan", calories: 89, emoji: "🍌", category: "mevalar", defaultUnit: "g" },
+            { name: "Nok", calories: 57, emoji: "🍐", category: "mevalar", defaultUnit: "g" },
+            { name: "Uzum", calories: 69, emoji: "🍇", category: "mevalar", defaultUnit: "g" },
+            { name: "Shaftoli", calories: 39, emoji: "🍑", category: "mevalar", defaultUnit: "g" },
+            
+            // Sabzavotlar (100g uchun)
+            { name: "Sabzi", calories: 41, emoji: "🥕", category: "sabzavotlar", defaultUnit: "g" },
+            { name: "Bodring", calories: 15, emoji: "🥒", category: "sabzavotlar", defaultUnit: "g" },
+            { name: "Pomidor", calories: 18, emoji: "🍅", category: "sabzavotlar", defaultUnit: "g" },
+            { name: "Kartoshka", calories: 77, emoji: "🥔", category: "sabzavotlar", defaultUnit: "g" },
+            
+            // Oqsillar
+            { name: "Tovuq", calories: 165, emoji: "🍗", category: "oqsillar", defaultUnit: "g" },
+            { name: "Go'sht", calories: 250, emoji: "🥩", category: "oqsillar", defaultUnit: "g" },
+            { name: "Baliq", calories: 206, emoji: "🐟", category: "oqsillar", defaultUnit: "g" },
+            { name: "Tuxum", calories: 155, emoji: "🥚", category: "oqsillar", defaultUnit: "piece" },
+            
+            // Uglevodlar
+            { name: "Non", calories: 265, emoji: "🍞", category: "uglevodlar", defaultUnit: "g" },
+            { name: "Guruch", calories: 130, emoji: "🍚", category: "uglevodlar", defaultUnit: "g" },
+            { name: "Makaron", calories: 131, emoji: "🍝", category: "uglevodlar", defaultUnit: "g" },
+            
+            // Milliy ovqatlar
+            { name: "Osh", calories: 220, emoji: "🍛", category: "milliy", defaultUnit: "g" },
+            { name: "Manti", calories: 180, emoji: "🥟", category: "milliy", defaultUnit: "piece" },
+            { name: "Somsa", calories: 250, emoji: "🥟", category: "milliy", defaultUnit: "piece" },
+            
+            // Fast food
+            { name: "Pitsa", calories: 266, emoji: "🍕", category: "fastfood", defaultUnit: "g" },
+            { name: "Gamburger", calories: 295, emoji: "🍔", category: "fastfood", defaultUnit: "piece" },
+            
+            // Ichimliklar
+            { name: "Coca-Cola", calories: 42, emoji: "🥤", category: "ichimliklar", defaultUnit: "ml" },
+            { name: "Sok (olma)", calories: 46, emoji: "🧃", category: "ichimliklar", defaultUnit: "ml" },
+            { name: "Suv", calories: 0, emoji: "💧", category: "ichimliklar", defaultUnit: "ml" },
+            
+            // Shirinliklar
+            { name: "Shokolad", calories: 546, emoji: "🍫", category: "shirinliklar", defaultUnit: "g" },
+            { name: "Pirog", calories: 370, emoji: "🥮", category: "shirinliklar", defaultUnit: "g" },
+            { name: "Tort", calories: 350, emoji: "🎂", category: "shirinliklar", defaultUnit: "g" }
+        ];
+
+        // Navigation
+        const navItems = document.querySelectorAll('.nav-item');
+        const pages = document.querySelectorAll('.page');
+        
+        navItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const targetPage = this.getAttribute('data-page');
+                navItems.forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+                pages.forEach(page => page.classList.add('hidden'));
+                document.getElementById(targetPage).classList.remove('hidden');
+            });
+        });
+
+        // Initialize
+        function initApp() {
+            loadSavedData();
+            renderFoodGrid();
+            setupSearch();
+            setupCategories();
+            updateUI();
+            updateGoalProgress();
+            calculatePrediction();
+            
+            // Event listeners
+            document.getElementById('addFoodBtn').addEventListener('click', function() {
+                navItems[1].click();
+            });
+            
+            document.getElementById('calculateCaloriesBtn').addEventListener('click', calculateCalories);
+            document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
+            
+            // Quantity modal event listeners
+            document.getElementById('unitSelect').addEventListener('change', updateTotalCalories);
+        }
+
+        // Kategoriyalarni sozlash
+        function setupCategories() {
+            const categories = ['all', 'mevalar', 'sabzavotlar', 'oqsillar', 'uglevodlar', 'milliy', 'fastfood', 'ichimliklar', 'shirinliklar'];
+            const categoryNames = {
+                'all': '🔄 Hammasi',
+                'mevalar': '🍎 Mevalar',
+                'sabzavotlar': '🥕 Sabzavotlar',
+                'oqsillar': '🍗 Oqsillar',
+                'uglevodlar': '🍞 Uglevodlar',
+                'milliy': '🇺🇿 Milliy',
+                'fastfood': '🍔 Fast Food',
+                'ichimliklar': '🥤 Ichimliklar',
+                'shirinliklar': '🍫 Shirinliklar'
+            };
+            
+            const categoryTabs = document.getElementById('categoryTabs');
+            categoryTabs.innerHTML = '';
+            
+            categories.forEach(category => {
+                const tab = document.createElement('div');
+                tab.className = `category-tab ${category === 'all' ? 'active' : ''}`;
+                tab.textContent = categoryNames[category];
+                tab.setAttribute('data-category', category);
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    currentCategory = category;
+                    renderFoodGrid();
+                });
+                categoryTabs.appendChild(tab);
+            });
+        }
+
+        // Ovqatlar gridini yaratish
+        function renderFoodGrid() {
+            const foodGrid = document.getElementById('foodGrid');
+            foodGrid.innerHTML = '';
+            
+            const filteredFoods = currentCategory === 'all' 
+                ? foodDatabase 
+                : foodDatabase.filter(food => food.category === currentCategory);
+            
+            filteredFoods.forEach(food => {
+                const foodCard = document.createElement('div');
+                foodCard.className = 'food-card';
+                foodCard.innerHTML = `
+                    <div class="food-emoji">${food.emoji}</div>
+                    <div class="food-name-small">${food.name}</div>
+                    <div class="food-calories-small">${food.calories} kcal/${food.defaultUnit === 'piece' ? 'dona' : '100g'}</div>
+                `;
+                foodCard.addEventListener('click', () => showQuantityModal(food.name, food.calories, food.emoji, food.defaultUnit));
+                foodGrid.appendChild(foodCard);
+            });
+        }
+
+        // Qidiruvni sozlash
+        function setupSearch() {
+            const foodSearch = document.getElementById('foodSearch');
+            foodSearch.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                const foodCards = document.querySelectorAll('.food-card');
+                
+                foodCards.forEach(card => {
+                    const foodName = card.querySelector('.food-name-small').textContent.toLowerCase();
+                    if (foodName.includes(searchTerm) || searchTerm === '') {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Quantity modalni ko'rsatish
+        function showQuantityModal(foodName, calories, emoji, defaultUnit = 'g') {
+            currentFood = foodName;
+            currentFoodCalories = calories;
+            currentQuantity = 100;
+            currentUnit = defaultUnit;
+            
+            document.getElementById('modalFoodName').innerHTML = `${emoji} ${foodName}`;
+            document.getElementById('quantityValue').textContent = currentQuantity;
+            document.getElementById('unitSelect').value = currentUnit;
+            document.getElementById('quantityModal').classList.remove('hidden');
+            
+            updateTotalCalories();
+        }
+
+        // Quantity modalni yashirish
+        function hideQuantityModal() {
+            document.getElementById('quantityModal').classList.add('hidden');
+        }
+
+        // Quantityni o'zgartirish
+        function changeQuantity(amount) {
+            currentQuantity = Math.max(1, currentQuantity + amount);
+            document.getElementById('quantityValue').textContent = currentQuantity;
+            updateTotalCalories();
+        }
+
+        // Jami kaloriyani yangilash
+        function updateTotalCalories() {
+            currentUnit = document.getElementById('unitSelect').value;
+            
+            // Birlik konvertatsiyasi
+            let multiplier = 1;
+            switch(currentUnit) {
+                case 'g':
+                    multiplier = 1;
+                    break;
+                case 'kg':
+                    multiplier = 10; // 100g * 10 = 1kg
+                    break;
+                case 'ml':
+                    multiplier = 1; // Suyuqliklar uchun 1ml = 1g deb hisoblaymiz
+                    break;
+                case 'l':
+                    multiplier = 10; // 100ml * 10 = 1l
+                    break;
+                case 'piece':
+                    multiplier = 1; // Donalar uchun
+                    break;
+                case 'cup':
+                    multiplier = 2.4; // 1 stakan = 240ml
+                    break;
+                case 'spoon':
+                    multiplier = 0.15; // 1 osh qoshiq = 15ml
+                    break;
+                case 'teaspoon':
+                    multiplier = 0.05; // 1 choy qoshiq = 5ml
+                    break;
+            }
+            
+            const totalCalories = Math.round((currentFoodCalories * currentQuantity * multiplier) / 100);
+            document.getElementById('totalCalories').textContent = totalCalories;
+        }
+
+        // Ovqatni miqdor bilan qo'shish
+        function addFoodWithQuantity() {
+            const totalCalories = parseInt(document.getElementById('totalCalories').textContent);
+            
+            consumedCalories += totalCalories;
+            foodHistory.push({ 
+                name: currentFood, 
+                calories: totalCalories, 
+                emoji: document.getElementById('modalFoodName').innerHTML.split(' ')[0],
+                quantity: currentQuantity,
+                unit: currentUnit,
+                time: new Date().toLocaleTimeString('uz-UZ', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                }) 
+            });
+            
+            // Kunlik kaloriya defitsitini hisoblash
+            const dailyDeficit = dailyCalories - consumedCalories;
+            if (dailyDeficit > 0) {
+                totalCaloriesDeficit += dailyDeficit;
+            }
+            
+            // Vaznni yangilash (har 7700 kcal = 1kg yo'qotish)
+            if (totalCaloriesDeficit >= 7700) {
+                const kgLost = Math.floor(totalCaloriesDeficit / 7700);
+                currentWeight = Math.max(targetWeight, currentWeight - kgLost);
+                totalCaloriesDeficit = totalCaloriesDeficit % 7700;
+                updateGoalProgress();
+                calculatePrediction();
+                showMessage(`🎉 Tabriklaymiz! ${kgLost}kg vazn yo'qotdingiz!`, 'success');
+            }
+            
+            updateUI();
+            saveData();
+            showMessage(`✅ ${currentFood} qo'shildi! ${totalCalories} kcal`, 'success');
+            
+            hideQuantityModal();
+            
+            // Asosiy sahifaga qaytish
+            setTimeout(() => {
+                navItems[0].click();
+            }, 1500);
+        }
+
+        // Maqsad progressini yangilash
+        function updateGoalProgress() {
+            const weightDiff = startWeight - targetWeight;
+            const lostWeight = Math.max(0, startWeight - currentWeight);
+            const progressPercent = weightDiff > 0 ? Math.min(100, (lostWeight / weightDiff) * 100) : 0;
+            
+            document.getElementById('currentWeightDisplay').textContent = currentWeight;
+            document.getElementById('targetWeightDisplay').textContent = targetWeight;
+            document.getElementById('weightLost').textContent = lostWeight.toFixed(1);
+            document.getElementById('goalProgress').style.width = progressPercent + '%';
+        }
+
+        // Natija bashorati
+        function calculatePrediction() {
+            const weightDiff = currentWeight - targetWeight;
+            if (weightDiff <= 0) {
+                document.getElementById('predictionWeeks').textContent = '0';
+                document.getElementById('predictionDate').textContent = 'Tayyor!';
+                return;
+            }
+            
+            const dailyDeficit = 500; // Kunlik 500 kcal kam iste'mol
+            const weeksNeeded = Math.ceil(weightDiff / 0.5); // Haftasiga 0.5kg yo'qotish
+            
+            // Taxminiy sana hisoblash
+            const targetDate = new Date();
+            targetDate.setDate(targetDate.getDate() + (weeksNeeded * 7));
+            
+            document.getElementById('predictionWeeks').textContent = weeksNeeded;
+            document.getElementById('predictionDate').textContent = formatDate(targetDate);
+        }
+
+        // Sana formatlash
+        function formatDate(date) {
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            return `${day}.${month}`;
+        }
+
+        // UI yangilash
+        function updateUI() {
+            const remaining = Math.max(0, dailyCalories - consumedCalories);
+            const progressPercent = Math.min(100, (consumedCalories / dailyCalories) * 100);
+            
+            document.getElementById('remainingCalories').textContent = remaining.toLocaleString();
+            document.getElementById('remainingCaloriesText').textContent = remaining;
+            document.getElementById('consumedCalories').textContent = consumedCalories;
+            document.getElementById('dailyProgress').style.width = progressPercent + '%';
+            
+            // Ovqatlar ro'yxatini yangilash
+            updateFoodLog();
+        }
+
+        // Ovqatlar ro'yxatini yangilash
+        function updateFoodLog() {
+            const foodLog = document.getElementById('foodLog');
+            if (foodHistory.length === 0) {
+                foodLog.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-utensils"></i>
+                        <p>Hali ovqat qo'shmagansiz</p>
+                    </div>
+                `;
+            } else {
+                foodLog.innerHTML = '';
+                foodHistory.slice().reverse().forEach(food => {
+                    const foodItem = document.createElement('div');
+                    foodItem.className = 'food-item';
+                    const unitText = getUnitText(food.unit);
+                    foodItem.innerHTML = `
+                        <div class="food-name">${food.emoji} ${food.name}</div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="color: var(--gray); font-size: 12px;">${food.quantity}${unitText} • ${food.time}</span>
+                            <div class="food-calories">${food.calories} kcal</div>
+                        </div>
+                    `;
+                    foodLog.appendChild(foodItem);
+                });
+            }
+        }
+
+        // Birlik matnini olish
+        function getUnitText(unit) {
+            const unitMap = {
+                'g': 'g',
+                'kg': 'kg',
+                'ml': 'ml',
+                'l': 'l',
+                'piece': ' dona',
+                'cup': ' stakan',
+                'spoon': ' osh qoshiq',
+                'teaspoon': ' choy qoshiq'
+            };
+            return unitMap[unit] || '';
+        }
+
+        // Profilni saqlash
+        function saveProfile() {
+            const calculatedCalories = calculateCalories();
+            if (!calculatedCalories) return;
+
+            dailyCalories = calculatedCalories;
+            currentWeight = parseFloat(document.getElementById('currentWeight').value) || 72;
+            targetWeight = parseFloat(document.getElementById('targetWeight').value) || 65;
+            startWeight = currentWeight; // Boshlang'ich vaznni yangilash
+            consumedCalories = 0;
+            foodHistory = [];
+            totalCaloriesDeficit = 0;
+            
+            saveData();
+            updateUI();
+            updateGoalProgress();
+            calculatePrediction();
+            
+            showMessage(`✅ Profil saqlandi! Kunlik: ${dailyCalories} kcal`, 'success');
+            setTimeout(() => {
+                navItems[0].click();
+            }, 2000);
+        }
+
+        // Kaloriya hisoblash
+        function calculateCalories() {
+            const age = parseInt(document.getElementById('userAge').value) || 25;
+            const height = parseInt(document.getElementById('userHeight').value) || 175;
+            const currentWeight = parseFloat(document.getElementById('currentWeight').value) || 72;
+            const targetWeight = parseFloat(document.getElementById('targetWeight').value) || 65;
+            const gender = document.getElementById('userGender').value;
+            const activityLevel = parseFloat(document.getElementById('activityLevel').value) || 1.375;
+            const goalType = document.getElementById('goalType').value;
+
+            if (!age || !height || !currentWeight) {
+                showMessage('❌ Iltimos, barcha maydonlarni to\'ldiring!', 'error');
+                return null;
+            }
+
+            // BMR hisoblash
+            let bmr;
+            if (gender === 'male') {
+                bmr = 10 * currentWeight + 6.25 * height - 5 * age + 5;
+            } else {
+                bmr = 10 * currentWeight + 6.25 * height - 5 * age - 161;
+            }
+
+            // TDEE hisoblash
+            const tdee = Math.round(bmr * activityLevel);
+
+            // Maqsadga qarab kaloriya
+            let dailyCalories;
+            let message;
+            let weeks;
+
+            if (goalType === 'loss') {
+                dailyCalories = Math.max(1200, tdee - 500);
+                const weightDiff = currentWeight - targetWeight;
+                weeks = Math.ceil(weightDiff / 0.5);
+                message = `Haftasiga 0.5kg yo'qotish`;
+            } else if (goalType === 'gain') {
+                dailyCalories = tdee + 500;
+                const weightDiff = targetWeight - currentWeight;
+                weeks = Math.ceil(weightDiff / 0.25);
+                message = `Haftasiga 0.25kg oshirish`;
+            } else {
+                dailyCalories = tdee;
+                weeks = 0;
+                message = `Joriy vaznni saqlash`;
+            }
+
+            // Natijani ko'rsatish
+            document.getElementById('resultCalories').textContent = dailyCalories.toLocaleString();
+            document.getElementById('resultWeeks').textContent = weeks > 0 ? weeks : '-';
+            document.getElementById('resultMessage').textContent = message;
+            document.getElementById('calculationResult').style.display = 'block';
+
+            return dailyCalories;
+        }
+
+        // Ma'lumotlarni saqlash
+        function saveData() {
+            const data = {
+                dailyCalories: dailyCalories,
+                consumedCalories: consumedCalories,
+                foodHistory: foodHistory,
+                currentWeight: currentWeight,
+                targetWeight: targetWeight,
+                startWeight: startWeight,
+                totalCaloriesDeficit: totalCaloriesDeficit,
+                profile: {
+                    name: document.getElementById('userName').value,
+                    age: document.getElementById('userAge').value,
+                    height: document.getElementById('userHeight').value,
+                    gender: document.getElementById('userGender').value,
+                    activityLevel: document.getElementById('activityLevel').value,
+                    goalType: document.getElementById('goalType').value
+                }
+            };
+            localStorage.setItem('calorieAppData', JSON.stringify(data));
+        }
+
+        // Ma'lumotlarni yuklash
+        function loadSavedData() {
+            const saved = localStorage.getItem('calorieAppData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                
+                dailyCalories = data.dailyCalories || 1850;
+                consumedCalories = data.consumedCalories || 0;
+                foodHistory = data.foodHistory || [];
+                currentWeight = data.currentWeight || 72;
+                targetWeight = data.targetWeight || 65;
+                startWeight = data.startWeight || currentWeight;
+                totalCaloriesDeficit = data.totalCaloriesDeficit || 0;
+                
+                if (data.profile) {
+                    document.getElementById('userName').value = data.profile.name || '';
+                    document.getElementById('userAge').value = data.profile.age || '';
+                    document.getElementById('userHeight').value = data.profile.height || '';
+                    document.getElementById('currentWeight').value = currentWeight;
+                    document.getElementById('targetWeight').value = targetWeight;
+                    document.getElementById('userGender').value = data.profile.gender || 'male';
+                    document.getElementById('activityLevel').value = data.profile.activityLevel || '1.375';
+                    document.getElementById('goalType').value = data.profile.goalType || 'loss';
+                    
+                    if (data.dailyCalories) {
+                        document.getElementById('resultCalories').textContent = data.dailyCalories.toLocaleString();
+                        document.getElementById('calculationResult').style.display = 'block';
+                    }
+                }
+            }
+        }
+
+        // Xabar ko'rsatish
+        function showMessage(message, type = 'info') {
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 25px;
+                font-weight: 500;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                text-align: center;
+            `;
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        }
+
+        // Initialize app
+        window.addEventListener('load', initApp);
+    </script>
+</body>
+</html>
